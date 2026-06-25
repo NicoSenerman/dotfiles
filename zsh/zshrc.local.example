@@ -1,0 +1,25 @@
+# ~/.zshrc.local — NOT in git. Per-host customizations + secrets live here.
+# Copy this file from zsh/zshrc.local.example to ~/.zshrc.local and fill in your values.
+
+# --- API keys / secrets (DO NOT COMMIT) ---
+export NEURALWATT_API_KEY=""
+export FIREWORKS_API_KEY=""
+export OLLAMA_API_KEY=""
+
+# --- Laptop-only aliases (don't load on the Spark) ---
+# alias pi-up="~/.local/bin/mount-pi"
+# alias pi-down="~/.local/bin/umount-pi"
+# alias hx="helix"
+# alias wallpaper="~/.local/bin/waydeeper-hotplug"
+
+# --- SSH aliases that point at remote machines (work on both laptop and Spark) ---
+alias dgx="ssh dgx"
+
+# --- Laptop-only SSH-tunnel aliases (Spark is on the LAN, doesn't need tunnels) ---
+# alias dgx-dashboard="ssh -fNL 11000:127.0.0.1:11000 dgx && ..."
+
+# --- Spark shared projects sync (laptop-side; uses laptop's /mnt/extrastorage) ---
+# alias spark-push="rsync -avz --delete /mnt/extrastorage/shared-projects/ spark:~/shared-projects/"
+# alias spark-pull="rsync -avz --delete spark:~/shared-projects/ /mnt/extrastorage/shared-projects/"
+
+# --- Machine-specific completions, PATH additions, etc. ---

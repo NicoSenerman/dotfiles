@@ -1,0 +1,14 @@
+# Local backups created by apply.sh
+*.pre-dotfiles.*
+
+# Local secrets file (per-host API keys etc — never tracked)
+zshrc.local
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Don't track any local .zsh_history that might land here by accident
+*zsh_history*

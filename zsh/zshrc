@@ -1,0 +1,55 @@
+# ~/.zshrc — managed by dotfiles repo
+# Portable across hosts. Host-specific overrides go in ~/.zshrc.local (not tracked).
+
+# Powerlevel10k instant prompt — must stay near the top
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# Load the distro's zsh config if present (CachyOS provides one; Ubuntu/Spark won't, fine to skip)
+[[ -r /usr/share/cachyos-zsh-config/cachyos-config.zsh ]] && \
+  source /usr/share/cachyos-zsh-config/cachyos-config.zsh
+
+# Powerlevel10k config
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# Rich file colors (vivid — install-tools.sh provides it)
+if command -v vivid >/dev/null 2>&1; then
+  export LS_COLORS="$(vivid generate molokai)"
+fi
+
+# Local bin paths
+. "$HOME/.local/share/../bin/env" 2>/dev/null
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.npm-global/bin:$PATH"
+
+# bun completions + path
+export BUN_INSTALL="$HOME/.bun"
+[ -s "$BUN_INSTALL/_bun" ] && source "$BUN_INSTALL/_bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+# --- Pi-related env (portable across all pi hosts) ---
+export USE_LOCAL_CACHE=TRUE
+export OPENCODE_AUTOTITLE_MODEL="ollama-cloud/ministral-3:3b"
+export PI_NOTIFY_SOUND_CMD="paplay /usr/share/sounds/freedesktop/stereo/complete.oga"
+export PI_FFF_MODE=override
+export FFF_FRECENCY_DB="$HOME/.local/share/fff/frecency.db"
+export FFF_HISTORY_DB="$HOME/.local/share/fff/history.db"
+export PI_ASK_USER_DISPLAY_MODE=inline
+
+# --- Editor aliases ---
+alias hx="helix"
+
+# --- Per-host config (laptop-only aliases, SSH aliases, secrets) ---
+# Source ~/.zshrc.local if it exists — this file is NOT in git, so host-specific
+# things (laptop aliases, API keys, machine-specific PATH additions) live there.
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
+# --- SSH: auto-install ghostty terminfo on remotes ---
+if [[ "$TERM_PROGRAM" == "ghostty" ]]; then
+    ssh-ghostty() {
+        infocmp -x xterm-ghostty | ssh "$@" -- tic -x - 2>/dev/null
+        TERM=xterm-256color command ssh "$@"
+    }
+    alias ssh=ssh-ghostty
+fi
