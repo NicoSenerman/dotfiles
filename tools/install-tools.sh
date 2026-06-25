@@ -43,7 +43,10 @@ if [[ "$PKG_MGR" == "apt" ]]; then
 	APT_PKGS=(ripgrep fd-find bat eza jq vivid fzf tmux gh curl)
 	$CHECK_ONLY || pkg_install "${APT_PKGS[@]}"
 	# Symlink fd-find -> fd on Ubuntu (Ubuntu refuses to ship a binary called "fd")
-	[[ ! -L /usr/local/bin/fd && "$PKG_MGR" == "apt" ]] && sudo ln -sf "$(command -v fdfind 2>/dev/null)" /usr/local/bin/fd true
+	# Gated on $CHECK_ONLY — don't sudo in --check mode
+	if [[ -z "$CHECK_ONLY" && ! -L /usr/local/bin/fd && "$PKG_MGR" == "apt" ]]; then
+		sudo ln -sf "$(command -v fdfind 2>/dev/null)" /usr/local/bin/fd true
+	fi
 else
 	$CHECK_ONLY || pkg_install "${TOOLS_BASE[@]}"
 fi
@@ -84,27 +87,35 @@ have bun && ok "bun ($(bun --version 2>/dev/null))" || {
 	$CHECK_ONLY || curl -fsSL https://bun.sh/install | bash
 }
 
-# --- 8. Powerlevel10k + its recommended fonts ---
-[[ -d ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k ]] && skip "powerlevel10k" || {
-	echo "=== powerlevel10k (zsh prompt) ==="
-	$CHECK_ONLY || {
-		# oh-my-zsh is the assumed loader (the laptop uses cachyos-zsh which wraps it);
-		# if not present, install it first
-		[[ -d ~/.oh-my-zsh ]] || {
-			sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-		}
-		git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
-			${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
-	}
+# --- 8. Powerlevel10k (standalone — does NOT require oh-my-zsh) ---
+P10K_DIR="$HOME/.powerlevel10k"
+[[ -d "$P10K_DIR/.git" ]] && skip "powerlevel10k" || {
+	echo "=== powerlevel10k (standalone install) ==="
+	$CHECK_ONLY || git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$P10K_DIR"
+}
+# Hint to source it from zshrc — apply.sh's zshrc already sources ~/.p10k.zsh,
+# but you also need: source ~/.powerlevel10k/powerlevel10k.zsh-theme
+# We add that to zshrc.local.example so the user picks it up.
+$CHECK_ONLY || {
+	if ! grep -q "powerlevel10k.zsh-theme" "$HOME/.zshrc.local" 2>/dev/null; then
+		echo "" >>"$HOME/.zshrc.local"
+		echo "# --- Load powerlevel10k theme ---" >>"$HOME/.zshrc.local"
+		echo 'source $HOME/.powerlevel10k/powerlevel10k.zsh-theme' >>"$HOME/.zshrc.local"
+		echo "(added powerlevel10k theme load to ~/.zshrc.local)"
+	fi
 }
 
-# --- 9. vivid themes (for LS_COLORS) ---
-have vivid && ok "vivid (themes via $(vivid --version 2>/dev/null || echo 'n/a'))" || skip "vivid (themes)"
-
-# --- 10. helix text editor (apt may not have it; use cargo if missing) ---
+# --- 9. helix text editor (apt may not have it; try cargo if missing) ---
 have helix && ok "helix" || {
-	echo "=== helix (via cargo if not in packages) ==="
-	$CHECK_ONLY || cargo install helix || echo "  (helix install failed; install manually from helix-editor.org)"
+	echo "=== helix ==="
+	$CHECK_ONLY || {
+		# Try apt first (newer Ubuntu has hx package); fall back to cargo install
+		if [[ "$PKG_MGR" == "apt" ]]; then
+			sudo apt install -y helix 2>/dev/null || cargo install helix 2>/dev/null || echo "  (helix install failed; install manually from helix-editor.org)"
+		else
+			pkg_install helix || cargo install helix
+		fi
+	}
 }
 
 echo
