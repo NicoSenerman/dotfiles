@@ -110,18 +110,28 @@ $CHECK_ONLY || {
 have helix && ok "helix" || {
 	echo "=== helix (static binary from helix-editor.org) ==="
 	$CHECK_ONLY || {
-		# Official Helix ships static binaries on its GitHub releases.
-		# Note: 'cargo install helix' is the wrong crate (a different package on
-		# crates.io shares the name 'helix'). The real editor is 'helix-term' on cargo,
-		# or just download the prebuilt binary.
-		HELIOS_VER="25.05.1" # check https://github.com/helix-editor/helix/releases for latest
-		mkdir -p "$HOME/.local"
-		curl -fsSL "https://github.com/helix-editor/helix/releases/download/${HELIOS_VER}/helix-${HELIOS_VER}-aarch64-linux-gnu.tar.xz" -o /tmp/helix.tar.xz 2>/dev/null &&
-			tar -xf /tmp/helix.tar.xz -C "$HOME/.local" --strip-components=1 &&
-			rm /tmp/helix.tar.xz &&
-			ln -sf "$HOME/.local/bin/hx" "$HOME/.local/bin/helix" 2>/dev/null &&
-			echo "  installed helix $HELIOS_VER to ~/.local/" ||
-			echo "  (download failed; install manually from helix-editor.org)"
+		# Lookup latest Helix release tag dynamically.
+		# Note: 'cargo install helix' is a different crate sharing the name 'helix'
+		# (not the editor). The real editor is 'helix-term' on cargo, or download the
+		# prebuilt static binary from GitHub releases.
+		HELIOS_VER=$(curl -fsSL "https://api.github.com/repos/helix-editor/helix/releases/latest" 2>/dev/null |
+			python3 -c "import json,sys; print(json.load(sys.stdin).get('tag_name',''))" 2>/dev/null)
+		if [[ -z "$HELIOS_VER" ]]; then
+			echo "  (couldn't look up latest helix version; install manually from helix-editor.org)"
+		else
+			mkdir -p "$HOME/.local"
+			# NOTE: asset name is 'aarch64-linux', NOT 'aarch64-linux-gnu'
+			ASSET="helix-${HELIOS_VER}-aarch64-linux.tar.xz"
+			URL="https://github.com/helix-editor/helix/releases/download/${HELIOS_VER}/${ASSET}"
+			if curl -fsSL "$URL" -o /tmp/helix.tar.xz 2>/dev/null; then
+				tar -xf /tmp/helix.tar.xz -C "$HOME/.local" --strip-components=1 &&
+					rm /tmp/helix.tar.xz &&
+					ln -sf "$HOME/.local/bin/hx" "$HOME/.local/bin/helix" 2>/dev/null &&
+					echo "  installed helix $HELIOS_VER to ~/.local/"
+			else
+				echo "  (download failed; install manually from helix-editor.org)"
+			fi
+		fi
 	}
 }
 
