@@ -28,6 +28,9 @@ export BUN_INSTALL="$HOME/.bun"
 [ -s "$BUN_INSTALL/_bun" ] && source "$BUN_INSTALL/_bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
+# Rust / cargo (installed via rustup) — source env if present
+[[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+
 # --- Pi-related env (portable across all pi hosts) ---
 export USE_LOCAL_CACHE=TRUE
 export OPENCODE_AUTOTITLE_MODEL="ollama-cloud/ministral-3:3b"

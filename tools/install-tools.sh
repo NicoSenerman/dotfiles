@@ -42,10 +42,11 @@ if [[ "$PKG_MGR" == "apt" ]]; then
 	# apt names differ: ripgrep->rg, fd-find->fd, helix may not be in apt
 	APT_PKGS=(ripgrep fd-find bat eza jq vivid fzf tmux gh curl)
 	$CHECK_ONLY || pkg_install "${APT_PKGS[@]}"
-	# Symlink fd-find -> fd on Ubuntu (Ubuntu refuses to ship a binary called "fd")
+	# Ubuntu ships fdfind/batcat instead of fd/bat — create the expected symlinks.
 	# Gated on $CHECK_ONLY — don't sudo in --check mode
-	if [[ -z "$CHECK_ONLY" && ! -L /usr/local/bin/fd && "$PKG_MGR" == "apt" ]]; then
-		sudo ln -sf "$(command -v fdfind 2>/dev/null)" /usr/local/bin/fd true
+	if [[ -z "$CHECK_ONLY" ]]; then
+		[[ -x /usr/bin/fdfind && ! -L /usr/local/bin/fd ]] && sudo ln -sf /usr/bin/fdfind /usr/local/bin/fd
+		[[ -x /usr/bin/batcat && ! -L /usr/local/bin/bat ]] && sudo ln -sf /usr/bin/batcat /usr/local/bin/bat
 	fi
 else
 	$CHECK_ONLY || pkg_install "${TOOLS_BASE[@]}"
@@ -105,16 +106,22 @@ $CHECK_ONLY || {
 	fi
 }
 
-# --- 9. helix text editor (apt may not have it; try cargo if missing) ---
+# --- 9. helix text editor (static binary from helix-editor.org) ---
 have helix && ok "helix" || {
-	echo "=== helix ==="
+	echo "=== helix (static binary from helix-editor.org) ==="
 	$CHECK_ONLY || {
-		# Try apt first (newer Ubuntu has hx package); fall back to cargo install
-		if [[ "$PKG_MGR" == "apt" ]]; then
-			sudo apt install -y helix 2>/dev/null || cargo install helix 2>/dev/null || echo "  (helix install failed; install manually from helix-editor.org)"
-		else
-			pkg_install helix || cargo install helix
-		fi
+		# Official Helix ships static binaries on its GitHub releases.
+		# Note: 'cargo install helix' is the wrong crate (a different package on
+		# crates.io shares the name 'helix'). The real editor is 'helix-term' on cargo,
+		# or just download the prebuilt binary.
+		HELIOS_VER="25.05.1" # check https://github.com/helix-editor/helix/releases for latest
+		mkdir -p "$HOME/.local"
+		curl -fsSL "https://github.com/helix-editor/helix/releases/download/${HELIOS_VER}/helix-${HELIOS_VER}-aarch64-linux-gnu.tar.xz" -o /tmp/helix.tar.xz 2>/dev/null &&
+			tar -xf /tmp/helix.tar.xz -C "$HOME/.local" --strip-components=1 &&
+			rm /tmp/helix.tar.xz &&
+			ln -sf "$HOME/.local/bin/hx" "$HOME/.local/bin/helix" 2>/dev/null &&
+			echo "  installed helix $HELIOS_VER to ~/.local/" ||
+			echo "  (download failed; install manually from helix-editor.org)"
 	}
 }
 
