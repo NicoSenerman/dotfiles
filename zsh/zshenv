@@ -1,0 +1,45 @@
+# ~/.zshenv — sourced for EVERY zsh shell (interactive, login, non-interactive, scripts).
+# Keep this LEAN — it runs on every zsh invocation including scripts, so heavy work here
+# slows everything. Only put things that must be set before .zshrc runs OR that must apply
+# even when .zshrc is not sourced.
+#
+# Why history + completion-stack live here (not in .zshrc):
+#   .zshrc is only sourced for INTERACTIVE shells. Some hosts (e.g. the DGX Spark over SSH)
+#   launch zsh as login-but-non-interactive, so .zshrc never runs — which means HISTFILE/
+#   SAVEHIST never get set → history doesn't persist → zsh-autosuggestions has no history to
+#   suggest from next session (looks like "autocomplete broken" on every fresh SSH).
+#   .zshenv is always sourced, so history + the completion plugin files load reliably.
+
+# --- Cargo env (rustup) ---
+[[ -f "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
+
+# --- Persistent history (critical for zsh-autosuggestions across sessions) ---
+# Defaults without this: SAVEHIST=0 → history not written to disk → empty history each session.
+HISTFILE=$HOME/.zsh_history
+HISTSIZE=50000
+SAVEHIST=10000
+setopt SHARE_HISTORY          # share history between concurrent zsh sessions
+setopt APPEND_HISTORY         # append (not overwrite) the history file
+setopt INC_APPEND_HISTORY     # write to history file immediately, not only on exit
+setopt HIST_IGNORE_DUPS       # don't record consecutive duplicates
+setopt HIST_IGNORE_ALL_DUPS   # delete older duplicates when a new dup is added
+setopt HIST_IGNORE_SPACE      # don't record commands starting with a space
+setopt HIST_REDUCE_BLANKS     # trim extra whitespace
+
+# --- zsh completion stack (sources the plugin files in ALL shells) ---
+# On hosts where .zshrc is reliably sourced interactively, this is redundant but harmless
+# (re-sourcing is idempotent). On hosts where .zshrc is NOT sourced (non-interactive login),
+# this is the only way the completion functions get defined.
+# fzf keybindings are guarded with [[ -o interactive ]] — they only bind when interactive.
+if [[ -r /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+  source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+fi
+if [[ -r /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+  source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
+if [[ -r /usr/share/doc/fzf/examples/key-bindings.zsh ]] && [[ -o interactive ]]; then
+  source /usr/share/doc/fzf/examples/key-bindings.zsh
+fi
+if [[ -r /usr/share/doc/fzf/examples/completion.zsh ]] && [[ -o interactive ]]; then
+  source /usr/share/doc/fzf/examples/completion.zsh
+fi

@@ -18,6 +18,21 @@ fi
 ln -sf "$REPO_DIR/zsh/zshrc" "$ZSHRC"
 echo "Linked ~/.zshrc -> $REPO_DIR/zsh/zshrc"
 
+# --- 1b. Link ~/.zshenv (sourced for EVERY zsh shell, not just interactive) ---
+# Carries HISTFILE/SAVEHIST + the zsh completion-stack sources. Critical on hosts whose
+# sshd launches zsh non-interactively (e.g. DGX Spark) — without .zshenv, .zshrc-only
+# history config never applies and zsh-autosuggestions has no history to suggest from.
+ZSHENV="$HOME/.zshenv"
+if [[ -L "$ZSHENV" ]]; then
+	rm "$ZSHENV"
+elif [[ -f "$ZSHENV" ]]; then
+	backup="$ZSHENV.pre-dotfiles.$(date +%s)"
+	mv "$ZSHENV" "$backup"
+	echo "Backed up existing ~/.zshenv -> $(basename "$backup")"
+fi
+ln -sf "$REPO_DIR/zsh/zshenv" "$ZSHENV"
+echo "Linked ~/.zshenv -> $REPO_DIR/zsh/zshenv"
+
 # --- 2. Copy ~/.zshrc.local.example to ~/.zshrc.local if ~/.zshrc.local doesn't exist ---
 if [[ ! -f "$HOME/.zshrc.local" ]]; then
 	cp "$REPO_DIR/zsh/zshrc.local.example" "$HOME/.zshrc.local"
