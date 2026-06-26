@@ -55,10 +55,10 @@ alias hx="helix"
 # All guarded with [[ -r ... ]] so they skip cleanly if a package isn't present yet.
 if [[ -r /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
   source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-  # Accept suggestion with Right arrow or Ctrl+Space (matches laptop feel)
-  bindkey "^[OC" autosuggest-accept        # Right arrow
-  bindkey "^ " autosuggest-accept          # Ctrl+Space
-  bindkey "^[^[[C" autosuggest-accept      # Alt+Right (some terminals)
+  # Accept suggestion: plain Right arrow at end-of-line accepts (plugin default).
+  # Do NOT bind ^[OC or ^[^[[C to autosuggest-accept — that hijacks normal cursor
+  # movement (can't move right mid-line). The plugin default (forward-char in
+  # ZSH_AUTOSUGGEST_ACCEPT_WIDGETS) handles accept correctly, matching the laptop.
 fi
 if [[ -r /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
   source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
