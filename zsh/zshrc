@@ -48,11 +48,27 @@ alias hx="helix"
 # things (laptop aliases, API keys, machine-specific PATH additions) live there.
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
-# --- SSH: auto-install ghostty terminfo on remotes ---
-if [[ "$TERM_PROGRAM" == "ghostty" ]]; then
-    ssh-ghostty() {
-        infocmp -x xterm-ghostty | ssh "$@" -- tic -x - 2>/dev/null
-        TERM=xterm-256color command ssh "$@"
-    }
-    alias ssh=ssh-ghostty
+# --- Ubuntu completion stack (mirrors CachyOS cachyos-config.zsh on the laptop) ---
+# The CachyOS line above is a no-op on Ubuntu; this block provides the same
+# fish-like autosuggestions + syntax highlighting + fzf that the laptop has.
+# Packages (apt): zsh-autosuggestions zsh-syntax-highlighting fzf — installed by install-tools.sh.
+# All guarded with [[ -r ... ]] so they skip cleanly if a package isn't present yet.
+if [[ -r /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+  source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+  # Accept suggestion with Right arrow or Ctrl+Space (matches laptop feel)
+  bindkey "^[OC" autosuggest-accept        # Right arrow
+  bindkey "^ " autosuggest-accept          # Ctrl+Space
+  bindkey "^[^[[C" autosuggest-accept      # Alt+Right (some terminals)
+fi
+if [[ -r /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+  source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
+# fzf keybindings (Ctrl+R history, Ctrl+T file, Alt+C cd) + completion
+# NB: fzf 0.48+ supports `eval "$(fzf --zsh)"` as a one-liner; the example
+# files below work on older fzf (e.g. Ubuntu 24.04 ships 0.44.1).
+if [[ -r /usr/share/doc/fzf/examples/key-bindings.zsh ]]; then
+  source /usr/share/doc/fzf/examples/key-bindings.zsh
+fi
+if [[ -r /usr/share/doc/fzf/examples/completion.zsh ]]; then
+  source /usr/share/doc/fzf/examples/completion.zsh
 fi

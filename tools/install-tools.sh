@@ -39,8 +39,12 @@ TOOLS_BASE=(ripgrep fd bat eza jq vivid fzf tmux helix gh curl)
 echo "=== base CLI tools (via $PKG_MGR) ==="
 # Handle distro package-name differences
 if [[ "$PKG_MGR" == "apt" ]]; then
-	# apt names differ: ripgrep->rg, fd-find->fd, helix may not be in apt
-	APT_PKGS=(ripgrep fd-find bat eza jq vivid fzf tmux gh curl)
+	# apt names differ: ripgrep->rg, fd-find->fd, helix may not be in apt.
+	# zsh-autosuggestions + zsh-syntax-highlighting provide the fish-like grey
+	# ghost-text + arrow-accept + syntax colors that CachyOS bundles via
+	# cachyos-config.zsh; on Ubuntu they're separate apt packages (the .zshrc
+	# sources them from /usr/share/zsh-*/ paths).
+	APT_PKGS=(ripgrep fd-find bat eza jq vivid fzf tmux gh curl zsh-autosuggestions zsh-syntax-highlighting)
 	$CHECK_ONLY || pkg_install "${APT_PKGS[@]}"
 	# Ubuntu ships fdfind/batcat instead of fd/bat — create the expected symlinks.
 	# Gated on $CHECK_ONLY — don't sudo in --check mode
